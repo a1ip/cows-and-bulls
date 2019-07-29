@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>Cows and Bulls</title>
+	<link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+	<link rel="stylesheet" type="text/css" href="cowsandbulls.css">
+</head>
+<body class="bg-light">
+	<div class="game-wrapper bg-dark rounded" id="overall-game-container">
+		<div class="h1 text-warning">Cows and Bulls</div>
+		<div id="difficulty"></div>
+		<div id='game-container'></div>
+		<div id='end-game-container'></div>
+	</div>
+	<script type="text/javascript">
+		(function () {
+			var data = {
+				difficulty:0,
+				noOfGuesses:0,
+				currentGuess:0,
+				levels:3,
+				secretNumber:'',
+				noOfDigits:0,
+				gameComplete:false
+			};
+			var controller = {
+				init:function() {
+					difficultyView.init();
+				}
+			};
+			var difficultyView = {
+				init: function() {
+					this.difficultyElement = document.getElementById('difficulty');
+					this.render();
+
+				},
+				render: function() {
+					var difficultyElement = this.difficultyElement;
+					difficultyElement.className = 'difficulty-view container';
+
+					var startButton = document.createElement('button');
+					startButton.className = 'btn btn-warning mt-4';
+					startButton.innerText  ="Start";
+
+					var footer = document.createElement('div');
+					footer.className = 'footer';
+
+					var buttonGroup = document.createElement('div');
+					buttonGroup.className = 'btn-group btn-group';
+					buttonGroup.role = 'group';
+
+					for (var i = 1; i <= data.levels; i++) {
+						var levelButton = document.createElement('button');
+						levelButton.className = 'btn btn-primary';
+						levelButton.innerText = 'LEVEL ' + i;
+						levelButton.value = i;
+						levelButton.addEventListener('click', function() {
+							data.difficulty = Number(this.value);
+						});
+						buttonGroup.appendChild(levelButton)
+						difficultyElement.appendChild(buttonGroup);
+					}
+					startButton.addEventListener('click', function() {
+						if(data.difficulty === 0) {
+							var errorDiv = document.createElement('div');
+							errorDiv.className = 'alert alert-danger';
+							errorDiv.innerText = "Please select a level";
+							var difficultyDiv = document.getElementById('difficulty');
+							var parentDiv = document.getElementById('overall-game-container');
+							parentDiv.insertBefore(errorDiv,difficultyDiv);
+							setTimeout(() => {document.querySelector('.alert').remove();}, 1000);
+						} else {
+							difficultyView.hide();
+							data.gameComplete = false;
+							gameView.init();
+						}
+
+					});
+
+					footer.appendChild(startButton)
+					difficultyElement.appendChild(footer);
+				},
+				show: function() {
+					this.difficultyElement.style.display = "block";
+				},
+				hide: function() {
+					this.difficultyElement.style.display = "none";
+				}
+			};
+			var gameView = {
+				init: function() {
+					this.gameElement = document.getElementById('game-container');
+					this.show();
+					if(data.difficulty>0){
+						this.render();
+					}
+				},
+				render: function() {
+					var gameElement = this.gameElement;
+					gameElement.className = "game-view container";
+					data.noOfDigits = data.difficulty+2;
+
+					var lowerLimit = Math.pow(10,data.noOfDigits-1);
+					var upperLimit = Math.pow(10,data.noOfDigits) - 1;
+					data.secretNumber = Math.floor((Math.random() * (upperLimit - lowerLimit + 1)) + lowerLimit);
+
+					var footer = document.createElement('div');
+					footer.className = 'footer';
+					
+					var exitButton = document.createElement('button');
+					exitButton.className = 'btn btn-danger';
+					exitButton.innerText = 'Exit';
+
+					var userInputContainer = document.createElement('div')
+					userInputContainer.className = 'user-input-container';
+
+					var displayResult = document.createElement('div');
+					displayResult.className  = 'display-result-container';
+
+					var resultElement = document.createElement('table');
+					resultElement.className = 'table table-dark table-striped table-sm mt-4 mb-5 rounded';
+					var tableHeading = document.createElement('tr');
+					tableHeading.innerHTML = `<th>Guess</th><th>Result</th>`
+					resultElement.appendChild(tableHeading);
+					
+					var userSubmitButton = document.createElement('button');
+					userSubmitButton.className = 'btn btn-primary ml-3';
+					userSubmitButton.innerText = 'Guess';
+					
+					var userInputElement = document.createElement('input');
+					userInputElement.type = 'number';
+					userInputElement.id = 'user-input-element';
+					userInputElement.className = 'inplace-container';
+					userInputElement.placeholder = `Enter a ${data.noOfDigits} digit number`;
+
+					var noOfGuessesText = document.createElement('div');
+					noOfGuessesText.className = 'alert alert-danger';
+					noOfGuessesText.innerHTML = 'Number of Guesses: ' + data.noOfGuesses;
+
+					userInputElement.addEventListener('keyup', function(event) {
+						if(event.keyCode === 13) {
+							userSubmitButton.click();
+						}
+
+					});
+
+					exitButton.addEventListener('click', function() {
+						data.difficulty = 0;
+						data.noOfGuesses = 0;
+						gameElement.innerHTML = '';
+						gameView.hide();
+						difficultyView.show();
+					});
+
+					userSubmitButton.addEventListener('click', function() {
+						var verifyResult = gameView.verifyGuess(userInputElement.value);
+						if(verifyResult != '') {
+							var tableRow = document.createElement('tr');
+							tableRow.innerHTML = `<td>${userInputElement.value}</td><td>${verifyResult}</td>`;
+							resultElement.appendChild(tableRow);
+							data.noOfGuesses+=1;
+							noOfGuessesText.innerHTML = 'Number of Guesses: ' + data.noOfGuesses;
+						}
+						if(data.gameComplete) {
+							gameElement.innerHTML = '';
+							gameView.hide();
+							endGameView.init();
+						}
+					});
+
+					userInputContainer.appendChild(userInputElement);
+					userInputContainer.appendChild(userSubmitButton);	
+
+					footer.appendChild(exitButton);
+					displayResult.appendChild(resultElement);
+
+					gameElement.appendChild(userInputContainer);
+					gameElement.appendChild(displayResult);
+					gameElement.appendChild(noOfGuessesText);
+					gameElement.appendChild(footer);
+				},
+				verifyGuess: function(guessValue) {
+					var noOfC = 0;
+					var noOfB = 0;
+					var guess = guessValue;
+					var secretNumber = data.secretNumber;
+					if(guessValue.toString().length === data.noOfDigits) {
+						while(guess !=0) {							
+							var guessDigit = guess % 10;
+							var secretNumberDigit = secretNumber % 10;
+							if(guessDigit === secretNumberDigit) {
+								noOfC+=1;
+							} else if(data.secretNumber.toString().indexOf(guessDigit.toString()) > -1) {
+								noOfB+=1;
+							}
+
+							guess = Math.floor(guess / 10);
+							secretNumber =Math.floor(secretNumber / 10);
+						}
+						var returnMsg = (noOfC !=0 || noOfB !=0) ? (noOfC ? (noOfC + "C") : '') + (noOfB ? (noOfB + "B") : '') : 0;
+						if(noOfC === data.noOfDigits) {
+							data.gameComplete = true;
+						}
+						return ('' + returnMsg);
+					}
+
+					return '';
+				},
+				show: function() {
+					this.gameElement.style.display = 'block';
+				},
+				hide: function() {
+					this.gameElement.style.display = 'none';
+				}
+			};
+			var endGameView = {
+				init: function() {
+					this.endGameElement = document.getElementById('end-game-container');
+					this.show();
+					this.render();
+				},
+				render: function() {
+
+					var endGameElement = this.endGameElement;
+					endGameElement.className = 'endgame-view-container';
+					var gameCompleteElement = document.createElement('div');
+					gameCompleteElement.innerHTML = 'Congratulations!! <br> Game Complete';
+					gameCompleteElement.className = 'alert alert-success alert-heading';
+
+					var playAgainButton = document.createElement('button');
+					playAgainButton.className = 'btn btn-warning';
+					playAgainButton.innerText = "Play Again";
+
+					var resultText = document.createElement('div');
+					resultText.className ='';
+					resultText.innerHTML = `<div class="alert alert-info">The secret number is ${data.secretNumber} and the No of Guesses is ${data.noOfGuesses}</div> `;
+
+					data.noOfGuesses = 0;
+
+					playAgainButton.addEventListener('click', function() {
+						data.difficulty = 0;
+						endGameElement.innerHTML = '';
+						endGameView.hide();
+						difficultyView.show();
+					});
+
+					endGameElement.appendChild(gameCompleteElement);
+					endGameElement.appendChild(resultText);
+					endGameElement.appendChild(playAgainButton);
+				},
+				show: function() {
+					this.endGameElement.style.display = 'block';
+				},
+				hide: function() {
+					this.endGameElement.style.display = 'none';
+				}
+			}
+
+			controller.init();
+			
+		})();
+	</script>
+
+</body>
+</html>
