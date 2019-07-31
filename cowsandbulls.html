@@ -185,18 +185,22 @@
 					var guess = guessValue;
 					var secretNumber = data.secretNumber;
 					var visitedForB = [0];
+					var visitedForC = [0];
 					if(guessValue.toString().length === data.noOfDigits) {
 						while(guess !=0) {							
 							var guessDigit = guess % 10;
 							var secretNumberDigit = secretNumber % 10;
 							if(guessDigit === secretNumberDigit) {
 								noOfC+=1;
+								visitedForC[guessDigit] = 1;
 								if(visitedForB[guessDigit]) {
 									noOfB--;
 								}
 							} else if(data.secretNumber.toString().indexOf(guessDigit.toString()) > -1) {
-								noOfB+=1;
-								visitedForB[guessDigit] = 1;
+								if(!visitedForC[guessDigit]) {
+									noOfB++;
+									visitedForB[guessDigit] = 1;
+								}
 							}
 
 							guess = Math.floor(guess / 10);
